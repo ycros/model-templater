@@ -1,0 +1,95 @@
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: sans-serif;
+    display: flex;
+}
+
+#file-tree {
+    min-width: 300px;
+    width: 300px;
+    margin-right: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.file-item {
+    padding: 8px;
+    cursor: pointer;
+    font-family: monospace;
+    border-radius: 4px;
+}
+
+.file-item:hover {
+    background: #f0f0f0;
+}
+
+#main-panel {
+    flex: 1;
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+#test-case-tabs {
+    margin-bottom: 20px;
+}
+
+#test-case-tabs button {
+    padding: 8px 16px;
+    margin-right: 8px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: 4px;
+}
+
+#test-case-tabs button.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+#output {
+    font-family: monospace;
+    font-size: 24px;
+    white-space: pre;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    min-height: 400px;
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+#output .space {
+    visibility: hidden;
+    position: relative;
+}
+
+#output .space::before {
+    visibility: visible;
+    position: absolute;
+    left: 0;
+    content: "·";
+    color: #aaa;
+}
+
+#output .tab {
+    visibility: hidden;
+    position: relative;
+}
+
+#output .tab::before {
+    visibility: visible;
+    position: absolute;
+    left: 0;
+    content: "→\00a0\00a0\00a0";
+    /* \00a0 is non-breaking space */
+    color: #aaa;
+}
+
+#output .newline::before {
+    content: "↵";
+    color: #aaa;
+}
