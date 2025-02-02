@@ -20,3 +20,9 @@ uv run flask run
 
 - Renders jinja templates with a variety of test cases.
 - Reloads templates on file change.
+
+## TODO
+
+- Better test cases
+- Perhaps a way to manage test cases
+- Some template formats (mistral) don't have line breaks, some sort of wrapping handling would be nice.
