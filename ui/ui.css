@@ -20,8 +20,17 @@ body {
     border-radius: 4px;
 }
 
+.file-item.selected {
+    background: #007bff;
+    color: white;
+}
+
 .file-item:hover {
     background: #f0f0f0;
+}
+
+.file-item.selected:hover {
+    background: #0056b3;
 }
 
 #main-panel {
@@ -52,7 +61,8 @@ body {
 #output {
     font-family: monospace;
     font-size: 24px;
-    white-space: pre;
+    white-space: pre-wrap;
+    word-break: break-all;
     padding: 15px;
     background: #f8f9fa;
     border: 1px solid #eee;
@@ -60,6 +70,8 @@ body {
     min-height: 400px;
     overflow-x: auto;
     max-width: 100%;
+    overflow-wrap: normal;
+    hyphens: none;
 }
 
 #output .space {

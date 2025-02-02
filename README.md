@@ -27,4 +27,3 @@ Then load up your browser to the URL that flask run outputs.
 
 - Better test cases
 - Perhaps a way to manage test cases
-- Some template formats (mistral) don't have line breaks, some sort of wrapping handling would be nice.

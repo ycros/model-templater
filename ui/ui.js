@@ -1,5 +1,5 @@
 const socket = io();
-let currentFile = null;
+let currentFile = localStorage.getItem('currentFile') || null;
 
 socket.on('render_update', function (data) {
     if (data.error) {
@@ -30,8 +30,15 @@ async function loadFileTree() {
     files.forEach(file => {
         const div = document.createElement('div');
         div.className = 'file-item';
+        if (file === currentFile) {
+            div.classList.add('selected');
+        }
         div.textContent = file;
-        div.onclick = () => fetchTemplate(file);
+        div.onclick = () => {
+            document.querySelectorAll('.file-item').forEach(item => item.classList.remove('selected'));
+            div.classList.add('selected');
+            fetchTemplate(file);
+        };
         tree.appendChild(div);
     });
 }
@@ -48,19 +55,29 @@ async function createTestCaseTabs() {
         btn.onclick = () => {
             document.querySelectorAll('#test-case-tabs button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            localStorage.setItem('currentTestCase', testCase);
             if (currentFile) fetchTemplate(currentFile);
         };
+        if (localStorage.getItem('currentTestCase') === testCase) {
+            btn.classList.add('active');
+        }
         tabs.appendChild(btn);
     });
 
-    // Update the activation logic
-    if (testCases.length > 0) {
-        tabs.firstChild.classList.add('active');
+    // Restore previously selected test case or default to first one
+    const savedTestCase = localStorage.getItem('currentTestCase');
+    const tabToActivate = savedTestCase && testCases.includes(savedTestCase)
+        ? tabs.querySelector(`button[textContent="${savedTestCase}"]`)
+        : tabs.firstChild;
+
+    if (tabToActivate) {
+        tabToActivate.classList.add('active');
     }
 }
 
 async function fetchTemplate(filepath) {
     currentFile = filepath;
+    localStorage.setItem('currentFile', filepath);
     const activeTestCase = document.querySelector('#test-case-tabs button.active')?.textContent || 'basic';
     socket.emit('request_render', {
         filepath: filepath,
@@ -71,4 +88,9 @@ async function fetchTemplate(filepath) {
 window.onload = async () => {
     await createTestCaseTabs();
     await loadFileTree();
+
+    // Restore previous file selection if it exists
+    if (currentFile) {
+        fetchTemplate(currentFile);
+    }
 };
