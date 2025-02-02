@@ -105,3 +105,12 @@ body {
     content: "↵";
     color: #aaa;
 }
+
+#output .token-marker {
+    color: #e83e8c;
+    font-weight: bold;
+}
+
+#output .markers {
+    color: #fd7e14;
+}

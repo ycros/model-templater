@@ -7,12 +7,56 @@ socket.on('render_update', function (data) {
         return;
     }
 
-    const processed = data.content
-        .replace(/ /g, '<span class="space"> </span>')
-        .replace(/\t/g, '<span class="tab">\t</span>')
-        .replace(/\n/g, '<span class="newline">\n</span>');
+    const content = data.content;
+    let result = '';
+    let remaining = content;
 
-    output.innerHTML = processed;
+    while (remaining.length > 0) {
+        // Try to match patterns in priority order
+        let match;
+
+        // Angle brackets and their contents
+        if (match = remaining.match(/^(?:<[^>]*>)/)) {
+            result += `<span class="markers">${match[0]}</span>`;
+        }
+        // Token markers (BOS_ or _EOS)
+        else if (match = remaining.match(/^(?:BOS_|_EOS)/)) {
+            result += `<span class="token-marker">${match[0]}</span>`;
+        }
+        // Square brackets and their contents
+        else if (match = remaining.match(/^\[[^\]]*\]/)) {
+            result += `<span class="markers">${match[0]}</span>`;
+        }
+        // Markdown headers at start of line
+        else if (match = remaining.match(/^(#+)/)) {
+            result += `<span class="markers">${match[0]}</span>`;
+        }
+        // Special characters
+        else if (match = remaining.match(/^[ \t\n]/)) {
+            switch (match[0]) {
+                case ' ':
+                    result += '<span class="space"> </span>';
+                    break;
+                case '\t':
+                    result += '<span class="tab">\t</span>';
+                    break;
+                case '\n':
+                    result += '<span class="newline">\n</span>';
+                    break;
+            }
+        }
+        // Any other single character
+        else {
+            result += remaining[0];
+            remaining = remaining.slice(1);
+            continue;
+        }
+
+        // Remove the matched portion from remaining
+        remaining = remaining.slice(match[0].length);
+    }
+
+    output.innerHTML = result;
 });
 
 socket.on('template_changed', (data) => {
