@@ -16,6 +16,8 @@ uv sync
 uv run flask run
 ```
 
+Then load up your browser to the URL that flask run outputs.
+
 ## Features
 
 - Renders jinja templates with a variety of test cases.
