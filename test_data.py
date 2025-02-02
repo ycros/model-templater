@@ -20,6 +20,14 @@ TEST_CASES = {
             {"role": "user", "content": "What is the weather in Tokyo?"},
         ]
     },
+    "user last sys": {
+        "messages": [
+            {"role": "system", "content": "You are a helpful AI"},
+            {"role": "user", "content": "Hello!"},
+            {"role": "assistant", "content": "Hello! How can I help you today?"},
+            {"role": "user", "content": "What is the weather in Tokyo?"},
+        ]
+    },
     "user last/add gen": {
         "messages": [
             {"role": "user", "content": "Hello!"},
@@ -33,7 +41,16 @@ TEST_CASES = {
             {"role": "user", "content": "Hello!"},
             {"role": "assistant", "content": "Hello! How can I help you today?"},
             {"role": "user", "content": "What is the weather in Tokyo?"},
+            {"role": "user", "content": "How many cats are there in the world?"},
+        ]
+    },
+    "double user sys": {
+        "messages": [
+            {"role": "system", "content": "You are a helpful AI"},
+            {"role": "user", "content": "Hello!"},
+            {"role": "assistant", "content": "Hello! How can I help you today?"},
             {"role": "user", "content": "What is the weather in Tokyo?"},
+            {"role": "user", "content": "How many cats are there in the world?"},
         ]
     },
     "invalid role": {
