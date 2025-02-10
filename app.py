@@ -18,6 +18,8 @@ env = Environment(
     loader=FileSystemLoader("templates"),
     auto_reload=True,
     cache_size=0,  # Disable caching completely
+    trim_blocks=True,
+    lstrip_blocks=True,
 )
 
 

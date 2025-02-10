@@ -62,6 +62,11 @@ TEST_CASES = {
         "messages": [
             {"role": "system", "content": "You are a helpful AI"},
             {"role": "user", "content": "Hello!"},
+            {
+                "role": "tool",
+                "content": "derp",
+                "tool_calls_json": "[{'name': 'tool_name', 'arguments': 'example_arg: 1.0, another_example_arg: true', 'type': 'function'}]",
+            },
             {"role": "assistant", "content": "Hello! How can I help you today?"},
         ],
         "tools_json": '[{"name": "tool_name", "arguments": "example_arg: 1.0, another_example_arg: true", "type": "function"}]',
