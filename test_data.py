@@ -71,6 +71,36 @@ TEST_CASES = {
         ],
         "tools_json": '[{"name": "tool_name", "arguments": "example_arg: 1.0, another_example_arg: true", "type": "function"}]',
     },
+    "think basic": {
+        "messages": [
+            {"role": "system", "content": "You are a helpful AI"},
+            {"role": "user", "content": "Hello!"},
+            {"role": "assistant", "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?"},
+        ]
+    },
+    "think user last": {
+        "messages": [
+            {"role": "user", "content": "Hello!"},
+            {"role": "assistant", "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?"},
+            {"role": "user", "content": "What is the weather in Tokyo?"},
+        ]
+    },
+    "think user last sys": {
+        "messages": [
+            {"role": "system", "content": "You are a helpful AI"},
+            {"role": "user", "content": "Hello!"},
+            {"role": "assistant", "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?"},
+            {"role": "user", "content": "What is the weather in Tokyo?"},
+        ]
+    },
+    "think user last/add gen": {
+        "messages": [
+            {"role": "user", "content": "Hello!"},
+            {"role": "assistant", "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?"},
+            {"role": "user", "content": "What is the weather in Tokyo?"},
+        ],
+        "add_generation_prompt": True,
+    },
 }
 
 TOKENS = {"bos_token": "BOS_", "eos_token": "_EOS", "sep_token": "<|>"}

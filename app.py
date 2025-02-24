@@ -9,6 +9,7 @@ from watchdog.events import (
     DirModifiedEvent,
     FileModifiedEvent,
 )
+from datetime import datetime
 
 from test_data import TEST_CASES, TOKENS
 
@@ -58,6 +59,7 @@ def handle_render_request(data):
             raise_exception=raise_exception,
             **TEST_CASES[data["test_case"]],
             **TOKENS,
+            strftime_now=lambda fmt: datetime.now().strftime(fmt),
         )
 
         if errors:
