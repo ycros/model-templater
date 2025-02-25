@@ -1,6 +1,16 @@
 const socket = io();
 let currentFile = localStorage.getItem('currentFile') || null;
 
+// Helper function to escape HTML special characters
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 socket.on('render_update', function (data) {
     if (data.error) {
         output.textContent = data.error;
@@ -17,19 +27,19 @@ socket.on('render_update', function (data) {
 
         // Angle brackets and their contents
         if (match = remaining.match(/^(?:<[^>]*>)/)) {
-            result += `<span class="markers">${match[0]}</span>`;
+            result += `<span class="markers">${escapeHtml(match[0])}</span>`;
         }
         // Token markers (BOS_ or _EOS)
         else if (match = remaining.match(/^(?:BOS_|_EOS)/)) {
-            result += `<span class="token-marker">${match[0]}</span>`;
+            result += `<span class="token-marker">${escapeHtml(match[0])}</span>`;
         }
         // Square brackets and their contents
         else if (match = remaining.match(/^\[[^\]]*\]/)) {
-            result += `<span class="markers">${match[0]}</span>`;
+            result += `<span class="markers">${escapeHtml(match[0])}</span>`;
         }
         // Markdown headers at start of line
         else if (match = remaining.match(/^(#+)/)) {
-            result += `<span class="markers">${match[0]}</span>`;
+            result += `<span class="markers">${escapeHtml(match[0])}</span>`;
         }
         // Special characters
         else if (match = remaining.match(/^[ \t\n]/)) {
@@ -47,7 +57,7 @@ socket.on('render_update', function (data) {
         }
         // Any other single character
         else {
-            result += remaining[0];
+            result += escapeHtml(remaining[0]);
             remaining = remaining.slice(1);
             continue;
         }
