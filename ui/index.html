@@ -7,20 +7,32 @@
 </head>
 
 <body>
-    <div id="file-tree"></div>
-    <div id="main-panel">
-        <div id="test-case-tabs"></div>
-        <div id="options-panel">
-            <label>
-                <input type="checkbox" id="add-generation-prompt" checked>
-                Add generation prompt
-            </label>
-            <label>
-                <input type="checkbox" id="add-system-prompt">
-                Add system prompt
-            </label>
+    <div id="app-container">
+        <!-- File List View -->
+        <div id="file-list-view">
+            <h2>Select a Template</h2>
+            <div id="file-tree"></div>
         </div>
-        <pre id="output"></pre>
+
+        <!-- Main Content View -->
+        <div id="content-view" class="hidden">
+            <div class="header">
+                <button id="back-button">← Back to Files</button>
+                <h3 id="current-file-name"></h3>
+            </div>
+            <div id="test-case-tabs"></div>
+            <div id="options-panel">
+                <label>
+                    <input type="checkbox" id="add-generation-prompt" checked>
+                    Add generation prompt
+                </label>
+                <label>
+                    <input type="checkbox" id="add-system-prompt">
+                    Add system prompt
+                </label>
+            </div>
+            <pre id="output"></pre>
+        </div>
     </div>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="/static/ui.js"></script>

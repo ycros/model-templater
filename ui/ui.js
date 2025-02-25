@@ -11,6 +11,17 @@ function escapeHtml(text) {
         .replace(/'/g, '&#039;');
 }
 
+// Add functions to switch between views
+function showFileListView() {
+    document.getElementById('file-list-view').classList.remove('hidden');
+    document.getElementById('content-view').classList.add('hidden');
+}
+
+function showContentView() {
+    document.getElementById('file-list-view').classList.add('hidden');
+    document.getElementById('content-view').classList.remove('hidden');
+}
+
 socket.on('render_update', function (data) {
     if (data.error) {
         output.textContent = data.error;
@@ -80,18 +91,16 @@ async function loadFileTree() {
     const response = await fetch('/api/files');
     const files = await response.json();
     const tree = document.getElementById('file-tree');
+    tree.innerHTML = ''; // Clear existing items
 
     files.forEach(file => {
         const div = document.createElement('div');
         div.className = 'file-item';
-        if (file === currentFile) {
-            div.classList.add('selected');
-        }
         div.textContent = file;
         div.onclick = () => {
-            document.querySelectorAll('.file-item').forEach(item => item.classList.remove('selected'));
-            div.classList.add('selected');
             fetchTemplate(file);
+            showContentView();
+            document.getElementById('current-file-name').textContent = file;
         };
         tree.appendChild(div);
     });
@@ -149,16 +158,28 @@ async function fetchTemplate(filepath) {
 }
 
 window.onload = async () => {
+    // Initialize views based on whether we have a current file
+    if (currentFile) {
+        document.getElementById('current-file-name').textContent = currentFile;
+        showContentView();
+    } else {
+        showFileListView();
+    }
+
+    // Set up back button
+    document.getElementById('back-button').addEventListener('click', () => {
+        showFileListView();
+    });
+
     await createTestCaseTabs();
     await loadFileTree();
 
-    // Restore add generation prompt preference
+    // Restore preferences
     const savedAddGenerationPrompt = localStorage.getItem('addGenerationPrompt');
     if (savedAddGenerationPrompt !== null) {
         document.getElementById('add-generation-prompt').checked = savedAddGenerationPrompt === 'true';
     }
 
-    // Restore add system prompt preference
     const savedAddSystemPrompt = localStorage.getItem('addSystemPrompt');
     if (savedAddSystemPrompt !== null) {
         document.getElementById('add-system-prompt').checked = savedAddSystemPrompt === 'true';
@@ -173,7 +194,7 @@ window.onload = async () => {
         if (currentFile) fetchTemplate(currentFile);
     });
 
-    // Restore previous file selection if it exists
+    // Render the template if we have a current file
     if (currentFile) {
         fetchTemplate(currentFile);
     }
