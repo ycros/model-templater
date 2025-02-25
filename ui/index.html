@@ -23,16 +23,16 @@
         <!-- Main Content View -->
         <div id="content-view" x-show="showContentView">
             <div class="header">
-                <button id="back-button" @click="goBackToFiles">← Back to Files</button>
+                <button id="back-button" class="btn" @click="goBackToFiles">← Back to Files</button>
                 <h3 id="current-file-name" x-text="currentFile"></h3>
             </div>
             <div id="test-case-tabs">
                 <template x-for="testCase in testCases" :key="testCase">
-                    <button @click="setActiveTestCase(testCase)" :class="{ 'active': activeTestCase === testCase }"
-                        x-text="testCase"></button>
+                    <button class="btn" :class="{ 'btn-primary': activeTestCase === testCase }"
+                        @click="setActiveTestCase(testCase)" x-text="testCase"></button>
                 </template>
             </div>
-            <div id="options-panel">
+            <div id="options-panel" class="panel">
                 <label>
                     <input type="checkbox" id="add-generation-prompt" checked x-model="addGenerationPrompt"
                         @change="updateTemplate">

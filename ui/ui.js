@@ -1,5 +1,9 @@
 const socket = io();
 
+/**
+ * @param {string} text
+ * @returns {string}
+ */
 function escapeHtml(text) {
     return text
         .replace(/&/g, '&amp;')
@@ -16,8 +20,10 @@ document.addEventListener('alpine:init', () => {
         currentFile: localStorage.getItem('currentFile') || null,
         addGenerationPrompt: localStorage.getItem('addGenerationPrompt') === 'true' || true,
         addSystemPrompt: localStorage.getItem('addSystemPrompt') === 'true' || false,
+        /** @type {string[]} */
         testCases: [],
         activeTestCase: localStorage.getItem('currentTestCase') || 'basic',
+        /** @type {string[]} */
         files: [],
         outputHtml: '',
 
@@ -49,6 +55,10 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
+        /**
+         * @param {string} content
+         * @returns {string}
+         */
         formatOutput(content) {
             let result = '';
             let remaining = content;
@@ -101,6 +111,9 @@ document.addEventListener('alpine:init', () => {
             return result;
         },
 
+        /**
+         * @returns {Promise<void>}
+         */
         async initializeApp() {
             await this.loadTestCases();
             await this.loadFiles();
@@ -110,6 +123,9 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        /**
+         * @returns {Promise<void>}
+         */
         async loadTestCases() {
             const response = await fetch('/api/test-cases');
             this.testCases = await response.json();
@@ -120,11 +136,17 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        /**
+         * @returns {Promise<void>}
+         */
         async loadFiles() {
             const response = await fetch('/api/files');
             this.files = await response.json();
         },
 
+        /**
+         * @param {string} testCase
+         */
         setActiveTestCase(testCase) {
             this.activeTestCase = testCase;
             localStorage.setItem('currentTestCase', testCase);
@@ -137,6 +159,9 @@ document.addEventListener('alpine:init', () => {
             this.showContentView = false;
         },
 
+        /**
+         * @param {string} file
+         */
         openFile(file) {
             this.currentFile = file;
             localStorage.setItem('currentFile', file);
@@ -162,4 +187,3 @@ document.addEventListener('alpine:init', () => {
         }
     }));
 });
-
