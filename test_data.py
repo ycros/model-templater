@@ -28,14 +28,6 @@ TEST_CASES = {
             {"role": "user", "content": "What is the weather in Tokyo?"},
         ]
     },
-    "user last/add gen": {
-        "messages": [
-            {"role": "user", "content": "Hello!"},
-            {"role": "assistant", "content": "Hello! How can I help you today?"},
-            {"role": "user", "content": "What is the weather in Tokyo?"},
-        ],
-        "add_generation_prompt": True,
-    },
     "double user": {
         "messages": [
             {"role": "user", "content": "Hello!"},
@@ -75,13 +67,19 @@ TEST_CASES = {
         "messages": [
             {"role": "system", "content": "You are a helpful AI"},
             {"role": "user", "content": "Hello!"},
-            {"role": "assistant", "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?"},
+            {
+                "role": "assistant",
+                "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?",
+            },
         ]
     },
     "think user last": {
         "messages": [
             {"role": "user", "content": "Hello!"},
-            {"role": "assistant", "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?"},
+            {
+                "role": "assistant",
+                "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?",
+            },
             {"role": "user", "content": "What is the weather in Tokyo?"},
         ]
     },
@@ -89,17 +87,12 @@ TEST_CASES = {
         "messages": [
             {"role": "system", "content": "You are a helpful AI"},
             {"role": "user", "content": "Hello!"},
-            {"role": "assistant", "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?"},
+            {
+                "role": "assistant",
+                "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?",
+            },
             {"role": "user", "content": "What is the weather in Tokyo?"},
         ]
-    },
-    "think user last/add gen": {
-        "messages": [
-            {"role": "user", "content": "Hello!"},
-            {"role": "assistant", "content": "<think>Hmm, let me think...</think>Hi! How can I help you today?"},
-            {"role": "user", "content": "What is the weather in Tokyo?"},
-        ],
-        "add_generation_prompt": True,
     },
 }
 

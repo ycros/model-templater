@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Jinja Template Debugger</title>
     <link rel="stylesheet" href="/static/ui.css">
 </head>
+
 <body>
     <div id="file-tree"></div>
     <div id="main-panel">
         <div id="test-case-tabs"></div>
+        <div id="options-panel">
+            <label>
+                <input type="checkbox" id="add-generation-prompt" checked>
+                Add generation prompt
+            </label>
+        </div>
         <pre id="output"></pre>
     </div>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="/static/ui.js"></script>
 </body>
+
 </html>

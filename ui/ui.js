@@ -123,15 +123,32 @@ async function fetchTemplate(filepath) {
     currentFile = filepath;
     localStorage.setItem('currentFile', filepath);
     const activeTestCase = document.querySelector('#test-case-tabs button.active')?.textContent || 'basic';
+    const addGenerationPrompt = document.getElementById('add-generation-prompt').checked;
+
+    // Save the preference
+    localStorage.setItem('addGenerationPrompt', addGenerationPrompt);
+
     socket.emit('request_render', {
         filepath: filepath,
-        test_case: activeTestCase
+        test_case: activeTestCase,
+        add_generation_prompt: addGenerationPrompt
     });
 }
 
 window.onload = async () => {
     await createTestCaseTabs();
     await loadFileTree();
+
+    // Restore add generation prompt preference
+    const savedAddGenerationPrompt = localStorage.getItem('addGenerationPrompt');
+    if (savedAddGenerationPrompt !== null) {
+        document.getElementById('add-generation-prompt').checked = savedAddGenerationPrompt === 'true';
+    }
+
+    // Add event listener for the checkbox
+    document.getElementById('add-generation-prompt').addEventListener('change', () => {
+        if (currentFile) fetchTemplate(currentFile);
+    });
 
     // Restore previous file selection if it exists
     if (currentFile) {

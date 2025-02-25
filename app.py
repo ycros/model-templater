@@ -55,9 +55,16 @@ def handle_render_request(data):
             nonlocal errors
             errors.append(error)
 
+        # Get the test case data and add the generation prompt flag
+        test_case_data = TEST_CASES[data["test_case"]].copy()
+
+        # Override add_generation_prompt with the value from the UI
+        if "add_generation_prompt" in data:
+            test_case_data["add_generation_prompt"] = data["add_generation_prompt"]
+
         rendered = template.render(
             raise_exception=raise_exception,
-            **TEST_CASES[data["test_case"]],
+            **test_case_data,
             **TOKENS,
             strftime_now=lambda fmt: datetime.now().strftime(fmt),
         )

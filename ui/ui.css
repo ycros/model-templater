@@ -1,8 +1,57 @@
+:root {
+    /* Light mode (default) */
+    --bg-color: white;
+    --text-color: black;
+    --panel-bg: #f8f9fa;
+    --border-color: #eee;
+    --primary-color: #007bff;
+    --primary-hover: #0056b3;
+    --hover-bg: #f0f0f0;
+    --button-border: #ccc;
+    --special-char-color: #aaa;
+    --token-marker-color: #e83e8c;
+    --markers-color: #fd7e14;
+}
+
+body.dark-mode {
+    /* Dark mode */
+    --bg-color: #121212;
+    --text-color: #eee;
+    --panel-bg: #2d2d2d;
+    --border-color: #444;
+    --primary-color: #0d8bfd;
+    --primary-hover: #1a85ff;
+    --hover-bg: #333;
+    --button-border: #555;
+    --special-char-color: #777;
+    --token-marker-color: #f06595;
+    --markers-color: #ff922b;
+}
+
+/* Use system preference by default */
+@media (prefers-color-scheme: dark) {
+    body:not(.light-mode) {
+        --bg-color: #121212;
+        --text-color: #eee;
+        --panel-bg: #2d2d2d;
+        --border-color: #444;
+        --primary-color: #0d8bfd;
+        --primary-hover: #1a85ff;
+        --hover-bg: #333;
+        --button-border: #555;
+        --special-char-color: #777;
+        --token-marker-color: #f06595;
+        --markers-color: #ff922b;
+    }
+}
+
 body {
     margin: 0;
     padding: 20px;
     font-family: sans-serif;
     display: flex;
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
 
 #file-tree {
@@ -21,16 +70,16 @@ body {
 }
 
 .file-item.selected {
-    background: #007bff;
+    background: var(--primary-color);
     color: white;
 }
 
 .file-item:hover {
-    background: #f0f0f0;
+    background: var(--hover-bg);
 }
 
 .file-item.selected:hover {
-    background: #0056b3;
+    background: var(--primary-hover);
 }
 
 #main-panel {
@@ -47,15 +96,16 @@ body {
     padding: 8px 16px;
     margin-right: 8px;
     cursor: pointer;
-    border: 1px solid #ccc;
-    background: white;
+    border: 1px solid var(--button-border);
+    background: var(--bg-color);
+    color: var(--text-color);
     border-radius: 4px;
 }
 
 #test-case-tabs button.active {
-    background: #007bff;
+    background: var(--primary-color);
     color: white;
-    border-color: #007bff;
+    border-color: var(--primary-color);
 }
 
 #output {
@@ -64,8 +114,8 @@ body {
     white-space: pre-wrap;
     word-break: break-all;
     padding: 15px;
-    background: #f8f9fa;
-    border: 1px solid #eee;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     min-height: 400px;
     overflow-x: auto;
@@ -84,7 +134,7 @@ body {
     position: absolute;
     left: 0;
     content: "·";
-    color: #aaa;
+    color: var(--special-char-color);
 }
 
 #output .tab {
@@ -98,19 +148,52 @@ body {
     left: 0;
     content: "→\00a0\00a0\00a0";
     /* \00a0 is non-breaking space */
-    color: #aaa;
+    color: var(--special-char-color);
 }
 
 #output .newline::before {
     content: "↵";
-    color: #aaa;
+    color: var(--special-char-color);
 }
 
 #output .token-marker {
-    color: #e83e8c;
+    color: var(--token-marker-color);
     font-weight: bold;
 }
 
 #output .markers {
-    color: #fd7e14;
+    color: var(--markers-color);
+}
+
+#options-panel {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+#options-panel label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+#options-panel input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    margin-bottom: 15px;
+}
+
+.theme-toggle button {
+    padding: 6px 12px;
+    cursor: pointer;
+    border: 1px solid var(--button-border);
+    background: var(--bg-color);
+    color: var(--text-color);
+    border-radius: 4px;
 }
