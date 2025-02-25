@@ -23,6 +23,8 @@ env = Environment(
     lstrip_blocks=True,
 )
 
+DEFAULT_SYSTEM_PROMPT = "You are a helpful AI"
+
 
 @app.route("/")
 def index():
@@ -57,6 +59,13 @@ def handle_render_request(data):
 
         # Get the test case data and add the generation prompt flag
         test_case_data = TEST_CASES[data["test_case"]].copy()
+
+        # Handle system prompt toggle
+        if "add_system_prompt" in data and data["add_system_prompt"]:
+            # Add system prompt to messages if toggle is on
+            system_msg = {"role": "system", "content": DEFAULT_SYSTEM_PROMPT}
+            messages = test_case_data.get("messages", []).copy()
+            test_case_data["messages"] = [system_msg] + messages
 
         # Override add_generation_prompt with the value from the UI
         if "add_generation_prompt" in data:

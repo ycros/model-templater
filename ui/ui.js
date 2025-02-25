@@ -124,14 +124,17 @@ async function fetchTemplate(filepath) {
     localStorage.setItem('currentFile', filepath);
     const activeTestCase = document.querySelector('#test-case-tabs button.active')?.textContent || 'basic';
     const addGenerationPrompt = document.getElementById('add-generation-prompt').checked;
+    const addSystemPrompt = document.getElementById('add-system-prompt').checked;
 
-    // Save the preference
+    // Save the preferences
     localStorage.setItem('addGenerationPrompt', addGenerationPrompt);
+    localStorage.setItem('addSystemPrompt', addSystemPrompt);
 
     socket.emit('request_render', {
         filepath: filepath,
         test_case: activeTestCase,
-        add_generation_prompt: addGenerationPrompt
+        add_generation_prompt: addGenerationPrompt,
+        add_system_prompt: addSystemPrompt
     });
 }
 
@@ -145,8 +148,18 @@ window.onload = async () => {
         document.getElementById('add-generation-prompt').checked = savedAddGenerationPrompt === 'true';
     }
 
-    // Add event listener for the checkbox
+    // Restore add system prompt preference
+    const savedAddSystemPrompt = localStorage.getItem('addSystemPrompt');
+    if (savedAddSystemPrompt !== null) {
+        document.getElementById('add-system-prompt').checked = savedAddSystemPrompt === 'true';
+    }
+
+    // Add event listeners for the checkboxes
     document.getElementById('add-generation-prompt').addEventListener('change', () => {
+        if (currentFile) fetchTemplate(currentFile);
+    });
+
+    document.getElementById('add-system-prompt').addEventListener('change', () => {
         if (currentFile) fetchTemplate(currentFile);
     });
 
