@@ -1,7 +1,5 @@
 const socket = io();
-let currentFile = localStorage.getItem('currentFile') || null;
 
-// Helper function to escape HTML special characters
 function escapeHtml(text) {
     return text
         .replace(/&/g, '&amp;')
@@ -11,191 +9,157 @@ function escapeHtml(text) {
         .replace(/'/g, '&#039;');
 }
 
-// Add functions to switch between views
-function showFileListView() {
-    document.getElementById('file-list-view').classList.remove('hidden');
-    document.getElementById('content-view').classList.add('hidden');
-}
+// Alpine.js component for template debugger
+document.addEventListener('alpine:init', () => {
+    Alpine.data('templateDebugger', () => ({
+        showContentView: !!localStorage.getItem('currentFile'),
+        currentFile: localStorage.getItem('currentFile') || null,
+        addGenerationPrompt: localStorage.getItem('addGenerationPrompt') === 'true' || true,
+        addSystemPrompt: localStorage.getItem('addSystemPrompt') === 'true' || false,
+        testCases: [],
+        activeTestCase: localStorage.getItem('currentTestCase') || 'basic',
+        files: [],
+        outputHtml: '',
 
-function showContentView() {
-    document.getElementById('file-list-view').classList.add('hidden');
-    document.getElementById('content-view').classList.remove('hidden');
-}
+        init() {
+            this.initializeApp();
+            this.setupSocketListeners();
+        },
 
-socket.on('render_update', function (data) {
-    if (data.error) {
-        output.textContent = data.error;
-        return;
-    }
+        setupSocketListeners() {
+            socket.on('render_update', (data) => {
+                if (data.error) {
+                    this.outputHtml = data.error;
+                    return;
+                }
 
-    const content = data.content;
-    let result = '';
-    let remaining = content;
+                this.outputHtml = this.formatOutput(data.content);
+            });
 
-    while (remaining.length > 0) {
-        // Try to match patterns in priority order
-        let match;
+            socket.on('template_changed', (data) => {
+                console.log('Template changed:', data.path);
+                if (this.currentFile === data.path) {
+                    this.fetchTemplate();
+                }
+            });
 
-        // Angle brackets and their contents
-        if (match = remaining.match(/^(?:<[^>]*>)/)) {
-            result += `<span class="markers">${escapeHtml(match[0])}</span>`;
-        }
-        // Token markers (BOS_ or _EOS)
-        else if (match = remaining.match(/^(?:BOS_|_EOS)/)) {
-            result += `<span class="token-marker">${escapeHtml(match[0])}</span>`;
-        }
-        // Square brackets and their contents
-        else if (match = remaining.match(/^\[[^\]]*\]/)) {
-            result += `<span class="markers">${escapeHtml(match[0])}</span>`;
-        }
-        // Markdown headers at start of line
-        else if (match = remaining.match(/^(#+)/)) {
-            result += `<span class="markers">${escapeHtml(match[0])}</span>`;
-        }
-        // Special characters
-        else if (match = remaining.match(/^[ \t\n]/)) {
-            switch (match[0]) {
-                case ' ':
-                    result += '<span class="space"> </span>';
-                    break;
-                case '\t':
-                    result += '<span class="tab">\t</span>';
-                    break;
-                case '\n':
-                    result += '<span class="newline">\n</span>';
-                    break;
+            socket.on('ui_changed', () => {
+                console.log('UI changed');
+                window.location.reload();
+            });
+        },
+
+        formatOutput(content) {
+            let result = '';
+            let remaining = content;
+
+            while (remaining.length > 0) {
+                // Try to match patterns in priority order
+                let match;
+
+                // Angle brackets and their contents
+                if (match = remaining.match(/^(?:<[^>]*>)/)) {
+                    result += `<span class="markers">${escapeHtml(match[0])}</span>`;
+                }
+                // Token markers (BOS_ or _EOS)
+                else if (match = remaining.match(/^(?:BOS_|_EOS)/)) {
+                    result += `<span class="token-marker">${escapeHtml(match[0])}</span>`;
+                }
+                // Square brackets and their contents
+                else if (match = remaining.match(/^\[[^\]]*\]/)) {
+                    result += `<span class="markers">${escapeHtml(match[0])}</span>`;
+                }
+                // Markdown headers at start of line
+                else if (match = remaining.match(/^(#+)/)) {
+                    result += `<span class="markers">${escapeHtml(match[0])}</span>`;
+                }
+                // Special characters
+                else if (match = remaining.match(/^[ \t\n]/)) {
+                    switch (match[0]) {
+                        case ' ':
+                            result += '<span class="space"> </span>';
+                            break;
+                        case '\t':
+                            result += '<span class="tab">\t</span>';
+                            break;
+                        case '\n':
+                            result += '<span class="newline">\n</span>';
+                            break;
+                    }
+                }
+                // Any other single character
+                else {
+                    result += escapeHtml(remaining[0]);
+                    remaining = remaining.slice(1);
+                    continue;
+                }
+
+                // Remove the matched portion from remaining
+                remaining = remaining.slice(match[0].length);
             }
-        }
-        // Any other single character
-        else {
-            result += escapeHtml(remaining[0]);
-            remaining = remaining.slice(1);
-            continue;
-        }
 
-        // Remove the matched portion from remaining
-        remaining = remaining.slice(match[0].length);
-    }
+            return result;
+        },
 
-    output.innerHTML = result;
-});
+        async initializeApp() {
+            await this.loadTestCases();
+            await this.loadFiles();
 
-socket.on('template_changed', (data) => {
-    console.log('Template changed:', data.path);
-    if (currentFile === data.path) {
-        fetchTemplate(currentFile);
-    }
-});
+            if (this.currentFile) {
+                this.fetchTemplate();
+            }
+        },
 
-async function loadFileTree() {
-    const response = await fetch('/api/files');
-    const files = await response.json();
-    const tree = document.getElementById('file-tree');
-    tree.innerHTML = ''; // Clear existing items
+        async loadTestCases() {
+            const response = await fetch('/api/test-cases');
+            this.testCases = await response.json();
 
-    files.forEach(file => {
-        const div = document.createElement('div');
-        div.className = 'file-item';
-        div.textContent = file;
-        div.onclick = () => {
-            fetchTemplate(file);
-            showContentView();
-            document.getElementById('current-file-name').textContent = file;
-        };
-        tree.appendChild(div);
-    });
-}
+            // Ensure we have a valid active case
+            if (!this.testCases.includes(this.activeTestCase)) {
+                this.activeTestCase = this.testCases[0] || 'basic';
+            }
+        },
 
-async function createTestCaseTabs() {
-    const tabs = document.getElementById('test-case-tabs');
-    const response = await fetch('/api/test-cases');
-    const testCases = await response.json();
+        async loadFiles() {
+            const response = await fetch('/api/files');
+            this.files = await response.json();
+        },
 
-    tabs.innerHTML = '';
-    testCases.forEach(testCase => {
-        const btn = document.createElement('button');
-        btn.textContent = testCase;
-        btn.onclick = () => {
-            document.querySelectorAll('#test-case-tabs button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+        setActiveTestCase(testCase) {
+            this.activeTestCase = testCase;
             localStorage.setItem('currentTestCase', testCase);
-            if (currentFile) fetchTemplate(currentFile);
-        };
-        if (localStorage.getItem('currentTestCase') === testCase) {
-            btn.classList.add('active');
+            if (this.currentFile) {
+                this.fetchTemplate();
+            }
+        },
+
+        goBackToFiles() {
+            this.showContentView = false;
+        },
+
+        openFile(file) {
+            this.currentFile = file;
+            localStorage.setItem('currentFile', file);
+            this.showContentView = true;
+            this.fetchTemplate();
+        },
+
+        updateTemplate() {
+            localStorage.setItem('addGenerationPrompt', this.addGenerationPrompt);
+            localStorage.setItem('addSystemPrompt', this.addSystemPrompt);
+            if (this.currentFile) {
+                this.fetchTemplate();
+            }
+        },
+
+        fetchTemplate() {
+            socket.emit('request_render', {
+                filepath: this.currentFile,
+                test_case: this.activeTestCase,
+                add_generation_prompt: this.addGenerationPrompt,
+                add_system_prompt: this.addSystemPrompt
+            });
         }
-        tabs.appendChild(btn);
-    });
+    }));
+});
 
-    // Restore previously selected test case or default to first one
-    const savedTestCase = localStorage.getItem('currentTestCase');
-    const tabToActivate = savedTestCase && testCases.includes(savedTestCase)
-        ? tabs.querySelector(`button[textContent="${savedTestCase}"]`)
-        : tabs.firstChild;
-
-    if (tabToActivate) {
-        tabToActivate.classList.add('active');
-    }
-}
-
-async function fetchTemplate(filepath) {
-    currentFile = filepath;
-    localStorage.setItem('currentFile', filepath);
-    const activeTestCase = document.querySelector('#test-case-tabs button.active')?.textContent || 'basic';
-    const addGenerationPrompt = document.getElementById('add-generation-prompt').checked;
-    const addSystemPrompt = document.getElementById('add-system-prompt').checked;
-
-    // Save the preferences
-    localStorage.setItem('addGenerationPrompt', addGenerationPrompt);
-    localStorage.setItem('addSystemPrompt', addSystemPrompt);
-
-    socket.emit('request_render', {
-        filepath: filepath,
-        test_case: activeTestCase,
-        add_generation_prompt: addGenerationPrompt,
-        add_system_prompt: addSystemPrompt
-    });
-}
-
-window.onload = async () => {
-    // Initialize views based on whether we have a current file
-    if (currentFile) {
-        document.getElementById('current-file-name').textContent = currentFile;
-        showContentView();
-    } else {
-        showFileListView();
-    }
-
-    // Set up back button
-    document.getElementById('back-button').addEventListener('click', () => {
-        showFileListView();
-    });
-
-    await createTestCaseTabs();
-    await loadFileTree();
-
-    // Restore preferences
-    const savedAddGenerationPrompt = localStorage.getItem('addGenerationPrompt');
-    if (savedAddGenerationPrompt !== null) {
-        document.getElementById('add-generation-prompt').checked = savedAddGenerationPrompt === 'true';
-    }
-
-    const savedAddSystemPrompt = localStorage.getItem('addSystemPrompt');
-    if (savedAddSystemPrompt !== null) {
-        document.getElementById('add-system-prompt').checked = savedAddSystemPrompt === 'true';
-    }
-
-    // Add event listeners for the checkboxes
-    document.getElementById('add-generation-prompt').addEventListener('change', () => {
-        if (currentFile) fetchTemplate(currentFile);
-    });
-
-    document.getElementById('add-system-prompt').addEventListener('change', () => {
-        if (currentFile) fetchTemplate(currentFile);
-    });
-
-    // Render the template if we have a current file
-    if (currentFile) {
-        fetchTemplate(currentFile);
-    }
-};

@@ -90,21 +90,31 @@ def handle_render_request(data):
         )
 
 
-class TemplateChangeHandler(FileSystemEventHandler):
+class FileChangeHandler(FileSystemEventHandler):
     def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
         if event.is_directory:
             return
 
-        path = str(event.src_path)
-        if path.endswith(".jinja"):
-            path = path.replace("\\", "/")
-            path = path.replace("./templates/", "")
-            print(f"Template changed: {path}")
-            socketio.emit("template_changed", {"path": path})
+        path = str(event.src_path).replace("\\", "/")
+
+        # Handle template changes
+        if path.endswith(".jinja") and "templates/" in path:
+            relative_path = path.split("templates/", 1)[1]
+            print(f"Template changed: {relative_path}")
+            socketio.emit("template_changed", {"path": relative_path})
+
+        # Handle UI file changes
+        elif "ui/" in path and any(
+            path.endswith(ext) for ext in [".html", ".js", ".css"]
+        ):
+            print(f"UI file changed: {path}")
+            socketio.emit("ui_changed", {})
 
 
+# Set up the observer to watch both templates and UI directories
 observer = Observer()
-observer.schedule(TemplateChangeHandler(), path="./templates", recursive=True)
+observer.schedule(FileChangeHandler(), path="./templates", recursive=True)
+observer.schedule(FileChangeHandler(), path="./ui", recursive=True)
 observer.start()
 
 
