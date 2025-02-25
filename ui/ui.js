@@ -16,36 +16,40 @@ function escapeHtml(text) {
 // Alpine.js component for template debugger
 document.addEventListener('alpine:init', () => {
     Alpine.data('templateDebugger', () => ({
-        showContentView: !!localStorage.getItem('currentFile'),
-        currentFile: localStorage.getItem('currentFile') || null,
-        addGenerationPrompt: localStorage.getItem('addGenerationPrompt') === 'true' || true,
-        addSystemPrompt: localStorage.getItem('addSystemPrompt') === 'true' || false,
-        /** @type {string[]} */
-        testCases: [],
-        activeTestCase: localStorage.getItem('currentTestCase') || 'basic',
-        /** @type {string[]} */
-        files: [],
-        outputHtml: '',
+        navigation: {
+            currentView: localStorage.getItem('currentFile') ? 'template' : 'fileList',
+            currentFile: localStorage.getItem('currentFile') || null,
+        },
+        renderOptions: {
+            addGenerationPrompt: localStorage.getItem('addGenerationPrompt') !== 'false',
+            addSystemPrompt: localStorage.getItem('addSystemPrompt') === 'true',
+        },
+        testCases: {
+            available: [],
+            active: localStorage.getItem('currentTestCase') || 'basic',
+        },
+        fileList: [],
+        output: '',
 
         init() {
-            this.initializeApp();
+            this.loadInitialData();
             this.setupSocketListeners();
         },
 
         setupSocketListeners() {
             socket.on('render_update', (data) => {
                 if (data.error) {
-                    this.outputHtml = data.error;
+                    this.output = data.error;
                     return;
                 }
 
-                this.outputHtml = this.formatOutput(data.content);
+                this.output = this.formatOutput(data.content);
             });
 
             socket.on('template_changed', (data) => {
                 console.log('Template changed:', data.path);
-                if (this.currentFile === data.path) {
-                    this.fetchTemplate();
+                if (this.navigation.currentFile === data.path) {
+                    this.renderTemplate();
                 }
             });
 
@@ -111,78 +115,69 @@ document.addEventListener('alpine:init', () => {
             return result;
         },
 
-        /**
-         * @returns {Promise<void>}
-         */
-        async initializeApp() {
-            await this.loadTestCases();
-            await this.loadFiles();
+        async loadInitialData() {
+            await Promise.all([
+                this.loadTestCases(),
+                this.loadTemplateFiles()
+            ]);
 
-            if (this.currentFile) {
-                this.fetchTemplate();
+            if (this.navigation.currentFile) {
+                this.renderTemplate();
             }
         },
 
-        /**
-         * @returns {Promise<void>}
-         */
         async loadTestCases() {
             const response = await fetch('/api/test-cases');
-            this.testCases = await response.json();
+            this.testCases.available = await response.json();
 
             // Ensure we have a valid active case
-            if (!this.testCases.includes(this.activeTestCase)) {
-                this.activeTestCase = this.testCases[0] || 'basic';
+            if (!this.testCases.available.includes(this.testCases.active)) {
+                this.testCases.active = this.testCases.available[0] || 'basic';
             }
         },
 
-        /**
-         * @returns {Promise<void>}
-         */
-        async loadFiles() {
+        async loadTemplateFiles() {
             const response = await fetch('/api/files');
-            this.files = await response.json();
+            this.fileList = await response.json();
         },
 
         /**
          * @param {string} testCase
          */
-        setActiveTestCase(testCase) {
-            this.activeTestCase = testCase;
+        selectTestCase(testCase) {
+            this.testCases.active = testCase;
             localStorage.setItem('currentTestCase', testCase);
-            if (this.currentFile) {
-                this.fetchTemplate();
-            }
+            this.renderTemplate();
         },
 
-        goBackToFiles() {
-            this.showContentView = false;
+        navigateToFileList() {
+            this.navigation.currentView = 'fileList';
         },
 
         /**
          * @param {string} file
          */
-        openFile(file) {
-            this.currentFile = file;
+        openTemplateFile(file) {
+            this.navigation.currentFile = file;
             localStorage.setItem('currentFile', file);
-            this.showContentView = true;
-            this.fetchTemplate();
+            this.navigation.currentView = 'template';
+            this.renderTemplate();
         },
 
-        updateTemplate() {
-            localStorage.setItem('addGenerationPrompt', this.addGenerationPrompt);
-            localStorage.setItem('addSystemPrompt', this.addSystemPrompt);
-            if (this.currentFile) {
-                this.fetchTemplate();
-            }
+        updateRenderOptions() {
+            localStorage.setItem('addGenerationPrompt', this.renderOptions.addGenerationPrompt);
+            localStorage.setItem('addSystemPrompt', this.renderOptions.addSystemPrompt);
+            this.renderTemplate();
         },
 
-        fetchTemplate() {
+        renderTemplate() {
+            if (!this.navigation.currentFile) return;
+
             socket.emit('request_render', {
-                filepath: this.currentFile,
-                test_case: this.activeTestCase,
-                add_generation_prompt: this.addGenerationPrompt,
-                add_system_prompt: this.addSystemPrompt
+                filepath: this.navigation.currentFile,
+                test_case: this.testCases.active,
+                add_generation_prompt: this.renderOptions.addGenerationPrompt,
+                add_system_prompt: this.renderOptions.addSystemPrompt
             });
         }
     }));

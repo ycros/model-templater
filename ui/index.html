@@ -11,39 +11,46 @@
 <body>
     <div id="app-container" x-data="templateDebugger">
         <!-- File List View -->
-        <div id="file-list-view" x-show="!showContentView">
+        <div id="file-list-view" x-show="navigation.currentView === 'fileList'">
             <h2>Select a Template</h2>
             <div id="file-tree">
-                <template x-for="file in files" :key="file">
-                    <div class="file-item" @click="openFile(file)" x-text="file"></div>
+                <template x-for="file in fileList" :key="file">
+                    <div class="file-item" @click="openTemplateFile(file)" x-text="file"></div>
                 </template>
             </div>
         </div>
 
-        <!-- Main Content View -->
-        <div id="content-view" x-show="showContentView">
+        <!-- Template View -->
+        <div id="template-view" x-show="navigation.currentView === 'template'">
             <div class="header">
-                <button id="back-button" class="btn" @click="goBackToFiles">← Back to Files</button>
-                <h3 id="current-file-name" x-text="currentFile"></h3>
+                <button id="back-button" class="btn" @click="navigateToFileList">← Back to Files</button>
+                <h3 id="current-file-name" x-text="navigation.currentFile"></h3>
             </div>
+
+            <!-- Test Case Selection -->
             <div id="test-case-tabs">
-                <template x-for="testCase in testCases" :key="testCase">
-                    <button class="btn" :class="{ 'btn-primary': activeTestCase === testCase }"
-                        @click="setActiveTestCase(testCase)" x-text="testCase"></button>
+                <template x-for="testCase in testCases.available" :key="testCase">
+                    <button class="btn" :class="{ 'btn-primary': testCases.active === testCase }"
+                        @click="selectTestCase(testCase)" x-text="testCase"></button>
                 </template>
             </div>
+
+            <!-- Rendering Options -->
             <div id="options-panel" class="panel">
                 <label>
-                    <input type="checkbox" id="add-generation-prompt" checked x-model="addGenerationPrompt"
-                        @change="updateTemplate">
+                    <input type="checkbox" id="add-generation-prompt" x-model="renderOptions.addGenerationPrompt"
+                        @change="updateRenderOptions">
                     Add generation prompt
                 </label>
                 <label>
-                    <input type="checkbox" id="add-system-prompt" x-model="addSystemPrompt" @change="updateTemplate">
+                    <input type="checkbox" id="add-system-prompt" x-model="renderOptions.addSystemPrompt"
+                        @change="updateRenderOptions">
                     Add system prompt
                 </label>
             </div>
-            <pre id="output" x-html="outputHtml"></pre>
+
+            <!-- Template Output -->
+            <pre id="output" x-html="output"></pre>
         </div>
 
         <!-- Alpine.js diagnostic element (can be removed later) -->
