@@ -1,22 +1,34 @@
 import atexit
+import argparse
+import shutil
+from datetime import datetime
+import os
 from flask import Flask, send_from_directory, jsonify
 from flask_socketio import SocketIO
-import os
 from jinja2 import Environment, FileSystemLoader
 from watchdog.observers import Observer
 from watchdog.events import (
     FileSystemEventHandler,
-    DirModifiedEvent,
     FileModifiedEvent,
-    FileCreatedEvent,
-    FileDeletedEvent,
 )
-from datetime import datetime
+from pathlib import Path
 
 from test_data import TEST_DATA, load_test_data
+from template_cli import extract_template, inject_template
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description="Template editor with live preview")
+parser.add_argument(
+    "--config",
+    "-c",
+    dest="config_path",
+    help="Path to tokenizer_config.json file to extract template from",
+)
+args = parser.parse_args()
 
 app = Flask(__name__, static_folder="ui", static_url_path="/static")
 socketio = SocketIO(app)
+
 env = Environment(
     loader=FileSystemLoader("templates"),
     auto_reload=True,
@@ -26,6 +38,33 @@ env = Environment(
 )
 
 DEFAULT_SYSTEM_PROMPT = "You are a helpful AI"
+
+# Global variables for config file handling
+config_path = None
+extracted_template = None
+config_backup_created = False
+
+
+# Initialize template from config if provided
+if args.config_path:
+    config_path = Path(args.config_path)
+    if config_path.exists():
+        # Extract the template and remember which file was created
+        extract_result = extract_template(config_path)
+        if extract_result == 0:
+            # Get the template file path that was created (based on model_type or dir name)
+            try:
+                import json
+
+                with open(config_path, "r", encoding="utf-8") as f:
+                    config_data = json.load(f)
+                model_name = config_data.get("model_type", config_path.parent.name)
+                extracted_template = f"{model_name}_template.jinja"
+                print(f"Extracted template to templates/{extracted_template}")
+            except Exception as e:
+                print(f"Error identifying extracted template: {e}")
+    else:
+        print(f"Warning: Config file {config_path} does not exist")
 
 
 @app.route("/")
@@ -56,7 +95,19 @@ def list_templates():
             if file.endswith(".jinja"):
                 path = os.path.relpath(os.path.join(root, file), "templates")
                 templates.append(path.replace("\\", "/"))
+
+    # Put the extracted template first if we have one
+    if extracted_template and extracted_template in templates:
+        templates.remove(extracted_template)
+        templates.insert(0, extracted_template)
+
     return jsonify(templates)
+
+
+@app.route("/api/active-template")
+def get_active_template():
+    """Return the extracted template path if one exists"""
+    return jsonify({"active_template": extracted_template})
 
 
 @socketio.on("request_render")
@@ -102,6 +153,24 @@ def handle_render_request(data):
         )
 
 
+def create_config_backup():
+    """Create a backup of the config file with timestamp if not already done"""
+    global config_backup_created
+
+    if config_path and not config_backup_created:
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = f"{config_path}.{timestamp}.orig"
+            shutil.copy2(config_path, backup_path)
+            print(f"Created backup of config file at {backup_path}")
+            config_backup_created = True
+            return True
+        except Exception as e:
+            print(f"Error creating config backup: {e}")
+            return False
+    return False
+
+
 class FileChangeHandler(FileSystemEventHandler):
     def _handle_file_event(self, event, event_type):
         if event.is_directory:
@@ -113,6 +182,24 @@ class FileChangeHandler(FileSystemEventHandler):
         if path.endswith(".jinja") and "templates/" in path:
             relative_path = path.split("templates/", 1)[1]
             print(f"Template {event_type}: {relative_path}")
+
+            # If this is our extracted template and the config path exists, update the config
+            if (
+                config_path
+                and extracted_template
+                and relative_path == extracted_template
+                and event_type == "modified"
+            ):
+                # Create backup on first change if needed
+                create_config_backup()
+
+                # Inject template back to config
+                template_path = Path("templates") / extracted_template
+                inject_result = inject_template(template_path, config_path)
+                if inject_result == 0:
+                    print(f"Injected updated template back to {config_path}")
+                else:
+                    print(f"Failed to inject template to {config_path}")
 
             if event_type == "modified":
                 socketio.emit("template_changed", {"path": relative_path})

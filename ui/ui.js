@@ -143,7 +143,8 @@ document.addEventListener('alpine:init', () => {
             await Promise.all([
                 this.loadTestCases(),
                 this.loadTemplateFiles(),
-                this.loadTokens()
+                this.loadTokens(),
+                this.checkActiveTemplate()
             ]);
 
             if (this.navigation.currentFile) {
@@ -169,6 +170,23 @@ document.addEventListener('alpine:init', () => {
         async loadTokens() {
             const response = await fetch('/api/tokens');
             this.tokens = await response.json();
+        },
+
+        async checkActiveTemplate() {
+            try {
+                const response = await fetch('/api/active-template');
+                const data = await response.json();
+
+                // If there's an active template and no file is selected yet, use it
+                if (data.active_template) {
+                    console.log('Using extracted template as default:', data.active_template);
+                    this.navigation.currentFile = data.active_template;
+                    this.navigation.currentView = 'template';
+                    localStorage.setItem('currentFile', data.active_template);
+                }
+            } catch (error) {
+                console.error('Error checking active template:', error);
+            }
         },
 
         /**
