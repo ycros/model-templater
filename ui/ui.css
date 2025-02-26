@@ -153,11 +153,12 @@ body {
 }
 
 #test-case-tabs {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 #test-case-tabs button {
     margin-right: 8px;
+    margin-bottom: 8px;
 }
 
 #test-case-tabs button.active {

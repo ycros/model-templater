@@ -1,6 +1,10 @@
 # Model Templater
 
-A web tool to debug llm jinja prompt templates.
+A web tool to debug and test LLM model jinja chat templates.
+
+## Screenshot
+
+![Screenshot](docs/screenshot.png)
 
 ## Installation
 
