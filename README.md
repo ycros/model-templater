@@ -21,7 +21,7 @@ Then load up your browser to the URL that flask run outputs.
 ## Features
 
 - Renders jinja templates with a variety of test cases.
-- Reloads templates on file change.
+- Re-renders templates when either the template files or the test data is edited.
 
 ## TODO
 

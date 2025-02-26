@@ -11,7 +11,7 @@ from watchdog.events import (
 )
 from datetime import datetime
 
-from test_data import TEST_CASES, TOKENS
+from test_data import TEST_DATA, load_test_data
 
 app = Flask(__name__, static_folder="ui", static_url_path="/static")
 socketio = SocketIO(app)
@@ -31,9 +31,14 @@ def index():
     return send_from_directory("ui", "index.html")
 
 
+@app.route("/api/tokens")
+def get_tokens():
+    return jsonify(TEST_DATA["tokens"])
+
+
 @app.route("/api/test-cases")
 def get_test_cases():
-    return jsonify(list(TEST_CASES.keys()))
+    return jsonify(list(TEST_DATA["test_cases"].keys()))
 
 
 @app.route("/api/files")
@@ -58,7 +63,7 @@ def handle_render_request(data):
             errors.append(error)
 
         # Get the test case data and add the generation prompt flag
-        test_case_data = TEST_CASES[data["test_case"]].copy()
+        test_case_data = TEST_DATA["test_cases"][data["test_case"]].copy()
 
         # Handle system prompt toggle
         if "add_system_prompt" in data and data["add_system_prompt"]:
@@ -74,7 +79,7 @@ def handle_render_request(data):
         rendered = template.render(
             raise_exception=raise_exception,
             **test_case_data,
-            **TOKENS,
+            **TEST_DATA["tokens"],
             strftime_now=lambda fmt: datetime.now().strftime(fmt),
         )
 
@@ -110,11 +115,18 @@ class FileChangeHandler(FileSystemEventHandler):
             print(f"UI file changed: {path}")
             socketio.emit("ui_changed", {})
 
+        # Handle test data TOML file changes
+        elif path.endswith("test_data.toml"):
+            print("Test data changed, reloading...")
+            load_test_data()
+            socketio.emit("test_data_changed", {})
 
-# Set up the observer to watch both templates and UI directories
+
+# Set up the observer to watch templates, UI, and test_data.toml
 observer = Observer()
 observer.schedule(FileChangeHandler(), path="./templates", recursive=True)
 observer.schedule(FileChangeHandler(), path="./ui", recursive=True)
+observer.schedule(FileChangeHandler(), path=".", recursive=False)
 observer.start()
 
 

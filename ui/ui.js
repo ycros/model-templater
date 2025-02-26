@@ -30,6 +30,7 @@ document.addEventListener('alpine:init', () => {
         },
         fileList: [],
         output: '',
+        tokens: {},
 
         init() {
             this.loadInitialData();
@@ -57,6 +58,15 @@ document.addEventListener('alpine:init', () => {
                 console.log('UI changed');
                 window.location.reload();
             });
+
+            socket.on('test_data_changed', async () => {
+                console.log('Test data changed');
+                await this.loadTokens();
+                await this.loadTestCases()
+                if (this.navigation.currentView === 'template') {
+                    await this.renderTemplate();
+                }
+            });
         },
 
         /**
@@ -71,13 +81,14 @@ document.addEventListener('alpine:init', () => {
                 // Try to match patterns in priority order
                 let match;
 
-                // Angle brackets and their contents
-                if (match = remaining.match(/^(?:<[^>]*>)/)) {
-                    result += `<span class="markers">${escapeHtml(match[0])}</span>`;
-                }
-                // Token markers (BOS_ or _EOS)
-                else if (match = remaining.match(/^(?:BOS_|_EOS)/)) {
+                // Token markers from test_data.toml
+                if (this.tokens &&
+                    (match = remaining.match(new RegExp(`^(${Object.values(this.tokens).map(t => this.escapeRegExp(t)).join('|')})`)))) {
                     result += `<span class="token-marker">${escapeHtml(match[0])}</span>`;
+                }
+                // Angle brackets and their contents
+                else if (match = remaining.match(/^(?:<[^>]*>)/)) {
+                    result += `<span class="markers">${escapeHtml(match[0])}</span>`;
                 }
                 // Square brackets and their contents
                 else if (match = remaining.match(/^\[[^\]]*\]/)) {
@@ -118,7 +129,8 @@ document.addEventListener('alpine:init', () => {
         async loadInitialData() {
             await Promise.all([
                 this.loadTestCases(),
-                this.loadTemplateFiles()
+                this.loadTemplateFiles(),
+                this.loadTokens()
             ]);
 
             if (this.navigation.currentFile) {
@@ -139,6 +151,11 @@ document.addEventListener('alpine:init', () => {
         async loadTemplateFiles() {
             const response = await fetch('/api/files');
             this.fileList = await response.json();
+        },
+
+        async loadTokens() {
+            const response = await fetch('/api/tokens');
+            this.tokens = await response.json();
         },
 
         /**
@@ -179,6 +196,15 @@ document.addEventListener('alpine:init', () => {
                 add_generation_prompt: this.renderOptions.addGenerationPrompt,
                 add_system_prompt: this.renderOptions.addSystemPrompt
             });
+        },
+
+        /**
+         * Escapes special characters in a string for use in RegExp
+         * @param {string} string
+         * @returns {string}
+         */
+        escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
     }));
 });

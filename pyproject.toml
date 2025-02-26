@@ -9,5 +9,5 @@ dependencies = [
     "watchdog>=2.0.0",
     "Flask-SocketIO>=5.0.0",
     "Jinja2>=3.0.0",
-    "python-dotenv>=0.15.0"
+    "python-dotenv>=0.15.0",
 ]
