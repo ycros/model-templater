@@ -54,6 +54,19 @@ document.addEventListener('alpine:init', () => {
                 }
             });
 
+            socket.on('template_list_changed', async () => {
+                console.log('Template file added or deleted, refreshing file list');
+                await this.loadTemplateFiles();
+
+                // If we're in the file list view, no further action needed
+                // If current file was deleted, go back to file list
+                if (this.navigation.currentView === 'template' &&
+                    !this.fileList.includes(this.navigation.currentFile)) {
+                    console.log('Current file no longer exists, returning to file list');
+                    this.navigateToFileList();
+                }
+            });
+
             socket.on('ui_changed', () => {
                 console.log('UI changed');
                 window.location.reload();

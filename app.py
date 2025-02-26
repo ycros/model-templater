@@ -8,6 +8,8 @@ from watchdog.events import (
     FileSystemEventHandler,
     DirModifiedEvent,
     FileModifiedEvent,
+    FileCreatedEvent,
+    FileDeletedEvent,
 )
 from datetime import datetime
 
@@ -96,7 +98,7 @@ def handle_render_request(data):
 
 
 class FileChangeHandler(FileSystemEventHandler):
-    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
+    def _handle_file_event(self, event, event_type):
         if event.is_directory:
             return
 
@@ -105,21 +107,34 @@ class FileChangeHandler(FileSystemEventHandler):
         # Handle template changes
         if path.endswith(".jinja") and "templates/" in path:
             relative_path = path.split("templates/", 1)[1]
-            print(f"Template changed: {relative_path}")
-            socketio.emit("template_changed", {"path": relative_path})
+            print(f"Template {event_type}: {relative_path}")
+
+            if event_type == "modified":
+                socketio.emit("template_changed", {"path": relative_path})
+            elif event_type in ["created", "deleted"]:
+                socketio.emit("template_list_changed", {})
 
         # Handle UI file changes
         elif "ui/" in path and any(
             path.endswith(ext) for ext in [".html", ".js", ".css"]
         ):
-            print(f"UI file changed: {path}")
+            print(f"UI file {event_type}: {path}")
             socketio.emit("ui_changed", {})
 
         # Handle test data TOML file changes
         elif path.endswith("test_data.toml"):
-            print("Test data changed, reloading...")
+            print(f"Test data {event_type}, reloading...")
             load_test_data()
             socketio.emit("test_data_changed", {})
+
+    def on_modified(self, event):
+        self._handle_file_event(event, "modified")
+
+    def on_created(self, event):
+        self._handle_file_event(event, "created")
+
+    def on_deleted(self, event):
+        self._handle_file_event(event, "deleted")
 
 
 # Set up the observer to watch templates, UI, and test_data.toml
