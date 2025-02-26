@@ -13,7 +13,7 @@ uv sync
 ## Usage
 
 ```bash
-uv run flask run
+uv run app.py
 ```
 
 Then load up your browser to the URL that flask run outputs.
