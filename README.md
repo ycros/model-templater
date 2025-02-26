@@ -21,9 +21,8 @@ Then load up your browser to the URL that flask run outputs.
 ## Features
 
 - Renders jinja templates with a variety of test cases.
-- Re-renders templates when either the template files or the test data is edited.
+- Re-renders templates when either the template file change.
 
-## TODO
+## License
 
-- Better test cases
-- Perhaps a way to manage test cases
+Model Templater is licensed under the GNU General Public License v3.0 (GPLv3). See the [LICENSE](LICENSE) file for details.
