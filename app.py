@@ -33,6 +33,11 @@ def index():
     return send_from_directory("ui", "index.html")
 
 
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory("ui", "favicon.ico")
+
+
 @app.route("/api/tokens")
 def get_tokens():
     return jsonify(TEST_DATA["tokens"])
