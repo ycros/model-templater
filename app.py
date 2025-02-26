@@ -3,6 +3,7 @@ import argparse
 import shutil
 from datetime import datetime
 import os
+import threading
 from flask import Flask, send_from_directory, jsonify
 from flask_socketio import SocketIO
 from jinja2 import Environment, FileSystemLoader
@@ -24,6 +25,12 @@ parser.add_argument(
     dest="config_path",
     help="Path to tokenizer_config.json file to extract template from",
 )
+parser.add_argument(
+    "--force",
+    "-f",
+    action="store_true",
+    help="Force overwrite existing template file",
+)
 args = parser.parse_args()
 
 app = Flask(__name__, static_folder="ui", static_url_path="/static")
@@ -43,26 +50,41 @@ DEFAULT_SYSTEM_PROMPT = "You are a helpful AI"
 config_path = None
 extracted_template = None
 config_backup_created = False
+inject_timer = None
+DEBOUNCE_TIME = 1.0  # Debounce time in seconds
 
 
 # Initialize template from config if provided
 if args.config_path:
     config_path = Path(args.config_path)
     if config_path.exists():
-        # Extract the template and remember which file was created
-        extract_result = extract_template(config_path)
-        if extract_result == 0:
-            # Get the template file path that was created (based on model_type or dir name)
-            try:
-                import json
+        try:
+            import json
 
-                with open(config_path, "r", encoding="utf-8") as f:
-                    config_data = json.load(f)
-                model_name = config_data.get("model_type", config_path.parent.name)
-                extracted_template = f"{model_name}_template.jinja"
+            with open(config_path, "r", encoding="utf-8") as f:
+                config_data = json.load(f)
+            model_name = config_data.get("model_type", config_path.parent.name)
+            template_filename = f"{model_name}_template.jinja"
+            template_path = Path("templates") / template_filename
+
+            # Check if template file already exists
+            if template_path.exists() and not args.force:
+                # Create backup of existing template
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_path = f"{template_path}.{timestamp}.bak"
+                shutil.copy2(template_path, backup_path)
+                print(f"Existing template found. Created backup at {backup_path}")
+
+            # Extract the template after handling any existing files
+            extract_result = extract_template(config_path)
+            if extract_result == 0:
+                extracted_template = template_filename
                 print(f"Extracted template to templates/{extracted_template}")
-            except Exception as e:
-                print(f"Error identifying extracted template: {e}")
+            else:
+                print(f"Failed to extract template from {config_path}")
+
+        except Exception as e:
+            print(f"Error processing config file: {e}")
     else:
         print(f"Warning: Config file {config_path} does not exist")
 
@@ -171,6 +193,26 @@ def create_config_backup():
     return False
 
 
+def debounced_inject_template(template_path, config_path):
+    """Inject template back to config after debounce period"""
+    global inject_timer
+
+    # Cancel previous timer if it exists
+    if inject_timer:
+        inject_timer.cancel()
+
+    # Create a new timer that will execute the injection after DEBOUNCE_TIME
+    def perform_injection():
+        create_config_backup()
+        inject_result = inject_template(template_path, config_path)
+        if inject_result != 0:
+            print(f"Failed to inject template to {config_path}")
+
+    inject_timer = threading.Timer(DEBOUNCE_TIME, perform_injection)
+    inject_timer.daemon = True
+    inject_timer.start()
+
+
 class FileChangeHandler(FileSystemEventHandler):
     def _handle_file_event(self, event, event_type):
         if event.is_directory:
@@ -190,16 +232,9 @@ class FileChangeHandler(FileSystemEventHandler):
                 and relative_path == extracted_template
                 and event_type == "modified"
             ):
-                # Create backup on first change if needed
-                create_config_backup()
-
-                # Inject template back to config
+                # Schedule debounced injection
                 template_path = Path("templates") / extracted_template
-                inject_result = inject_template(template_path, config_path)
-                if inject_result == 0:
-                    print(f"Injected updated template back to {config_path}")
-                else:
-                    print(f"Failed to inject template to {config_path}")
+                debounced_inject_template(template_path, config_path)
 
             if event_type == "modified":
                 socketio.emit("template_changed", {"path": relative_path})
@@ -242,6 +277,11 @@ def stop_observer():
     observer.stop()
     observer.join()
 
+    # Cancel any pending injection timer
+    global inject_timer
+    if inject_timer:
+        inject_timer.cancel()
+
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    socketio.run(app)
