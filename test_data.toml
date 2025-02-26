@@ -6,27 +6,27 @@ bos_token = "BOS_"
 eos_token = "_EOS"
 sep_token = "<|>"
 
-# Basic test with simple user and assistant messages
-[test_cases.basic]
+# test cases
+[test_cases."user>ai"]
 messages = [
     { role = "user", content = "Hello!" },
     { role = "assistant", content = "Hello! How can I help you today?" },
 ]
 
-# Empty test case with no messages
 [test_cases.empty]
 messages = []
 
-# User message as the last message in the conversation
-[test_cases."user last"]
+[test_cases."just user"]
+messages = [{ role = "user", content = "Hello!" }]
+
+[test_cases."user>ai>user"]
 messages = [
     { role = "user", content = "Hello!" },
     { role = "assistant", content = "Hello! How can I help you today?" },
     { role = "user", content = "What is the weather in Tokyo?" },
 ]
 
-# Test case with two user messages in sequence
-[test_cases."double user"]
+[test_cases."user>ai>user>user"]
 messages = [
     { role = "user", content = "Hello!" },
     { role = "assistant", content = "Hello! How can I help you today?" },
@@ -34,11 +34,9 @@ messages = [
     { role = "user", content = "How many cats are there in the world?" },
 ]
 
-# Test case with an invalid role
 [test_cases."invalid role"]
 messages = [{ role = "invalid", content = "Hello!" }]
 
-# Test case with tool calls
 [test_cases.tools]
 messages = [
     { role = "user", content = "Hello!" },
@@ -47,17 +45,15 @@ messages = [
 ]
 tools_json = '[{"name": "tool_name", "arguments": "example_arg: 1.0, another_example_arg: true", "type": "function"}]'
 
-# Test case with thinking tag in assistant response
-[test_cases."think basic"]
+[test_cases."think user>ai"]
 messages = [
     { role = "user", content = "Hello!" },
-    { role = "assistant", content = "<think>Hmm, let me think...</think>Hi! How can I help you today?" },
+    { role = "assistant", content = "<think>\nHmm, let me think...\n</think>\nHi! How can I help you today?" },
 ]
 
-# Test case with thinking tag and user as last message
-[test_cases."think user last"]
+[test_cases."think user>ai>user"]
 messages = [
     { role = "user", content = "Hello!" },
-    { role = "assistant", content = "<think>Hmm, let me think...</think>Hi! How can I help you today?" },
+    { role = "assistant", content = "<think>\nHmm, let me think...\n</think>\nHi! How can I help you today?" },
     { role = "user", content = "What is the weather in Tokyo?" },
 ]
